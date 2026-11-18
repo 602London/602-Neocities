@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>602ART</title>
+
+    <link rel="icon" href="../img/7wizard602.png" type="image/png">
+    <link rel="stylesheet" href="../css/art.css">
+</head>
+
+<body>
+
+    <main class="gallery-page">
+        <!-- Logo that clicks back to home -->
+        <a class="home-logo" href="../index.html">
+            <img src="../img/7wizard602.png" alt="Return to homepage">
+        </a>
+
+        <h1>art</h1>
+
+        <!-- Art gallery: click a thumbnail to open it full size -->
+        <section class="art-grid" aria-label="Art gallery">
+
+            <button class="art-item" type="button" data-full="../art/3abclared.jpg">
+                <img src="../art/3abclared.jpg" alt="3abclared" loading="lazy">
+            </button>
+
+            <button class="art-item" type="button" data-full="../art/3abSlewfinal.jpg">
+                <img src="../art/3abSlewfinal.jpg" alt="3abSlewfinal" loading="lazy">
+            </button>
+
+            <button class="art-item" type="button" data-full="../art/motiontracker_bg.png">
+                <img src="../art/motiontracker_bg.png" alt="motiontracker_bg" loading="lazy">
+            </button>
+
+            <button class="art-item" type="button" data-full="../art/no heart.png">
+                <img src="../art/no heart.png" alt="no heart" loading="lazy">
+            </button>
+
+            <button class="art-item" type="button" data-full="../art/7wizardfirstblack.png">
+                <img src="../art/7wizardfirstblack.png" alt="7wizardfirstblack" loading="lazy">
+            </button>
+
+        </section>
+
+        <a class="back-link" href="../index.html">BACK</a>
+    </main>
+
+    <!-- Full-size viewer -->
+    <dialog class="lightbox" id="lightbox">
+        <button class="close" type="button" aria-label="Close">&times;</button>
+        <button class="nav prev" type="button" aria-label="Previous">&#8249;</button>
+        <img id="lightbox-img" src="" alt="">
+        <button class="nav next" type="button" aria-label="Next">&#8250;</button>
+    </dialog>
+
+    <script>
+        const items = [...document.querySelectorAll('.art-item')];
+        const box = document.getElementById('lightbox');
+        const big = document.getElementById('lightbox-img');
+        let current = 0;
+
+        function show(i) {
+            current = (i + items.length) % items.length;
+            big.src = items[current].dataset.full;
+            big.alt = items[current].querySelector('img').alt;
+        }
+
+        items.forEach((item, i) => item.addEventListener('click', () => {
+            show(i);
+            box.showModal();
+        }));
+
+        box.querySelector('.close').addEventListener('click', () => box.close());
+        box.querySelector('.prev').addEventListener('click', () => show(current - 1));
+        box.querySelector('.next').addEventListener('click', () => show(current + 1));
+
+        // Click the dark backdrop to close
+        box.addEventListener('click', e => { if (e.target === box) box.close(); });
+
+        // Arrow keys to browse (Esc closes by default)
+        document.addEventListener('keydown', e => {
+            if (!box.open) return;
+            if (e.key === 'ArrowLeft') show(current - 1);
+            if (e.key === 'ArrowRight') show(current + 1);
+        });
+    </script>
+
+</body>
+</html>

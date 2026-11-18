@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>602</title>
+
+    <!-- Paths are RELATIVE (no C:\ or D:\) so they work once uploaded to Neocities -->
+    <link rel="icon" href="img/7wizard602.png" type="image/png">
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- three.js for the 3D logo -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+    <script type="module" src="js/wizard3d.js"></script>
+
+    
+<style>
+.title-bar {
+background: linear-gradient(90deg, rgb(6, 2, 241), rgb(65, 141, 240), rgba(225, 228, 231, 0));
+}
+
+.player {
+width: fit-content;
+border: black solid 1px;
+border-width: 1px 0px 0px 1px;
+position: relative;
+/* sits left of the home window until you drag it */
+justify-self: end;
+/* hug the home window (see .desktop in css/style.css) */
+z-index: 10;
+/* keeps the player above the rest of the page */
+}
+
+.draggable .title-bar {
+cursor: move;
+/* drag the title bar to move the window */
+user-select: none;
+touch-action: none;
+}
+
+/* windows you are not using get the grey title bar, like real Win98 */
+.draggable:not(.active) .title-bar {
+background: linear-gradient(90deg, #808080, #b5b5b5, rgba(225, 228, 231, 0));
+}
+
+.draggable.minimized .window-body {
+display: none;
+}
+
+.controlimg:hover {
+cursor: help;
+}
+
+input[type="range"] {
+-webkit-appearance: none;
+appearance: none;
+width: 100%;
+background: transparent;
+}
+
+input[type="range"]:focus {
+outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+-webkit-appearance: none;
+height: 21px;
+width: 11px;
+/* raised grey knob, drawn with css so it doesn't rely on an outside image */
+background: #c0c0c0;
+box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #ffffff, inset -2px -2px #808080, inset 2px 2px #dfdfdf;
+transform: translateY(-8px);
+border: none;
+}
+
+input[type="range"].has-box-indicator::-webkit-slider-thumb {
+background: svg-load("https://raw.githubusercontent.com/jdan/98.css/main/icon/indicator-rectangle-horizontal.svg");
+transform: translateY(-10px);
+}
+
+input[type="range"]::-moz-range-thumb {
+height: 21px;
+width: 11px;
+border: 0;
+border-radius: 0;
+background: svg-load("https://raw.githubusercontent.com/jdan/98.css/main/icon/indicator-horizontal.svg");
+transform: translateY(2px);
+}
+
+input[type="range"]::-moz-range-thumb {
+background: #c0c0c0;
+box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #ffffff, inset -2px -2px #808080, inset 2px 2px #dfdfdf;
+border: 0;
+border-radius: 0;
+height: 21px;
+transform: translateY(2px);
+width: 11px;
+}
+
+input[type="range"].has-box-indicator::-moz-range-thumb {
+background: svg-load("https://raw.githubusercontent.com/jdan/98.css/main/icon/indicator-rectangle-horizontal.svg");
+transform: translateY(0px);
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+width: 100%;
+height: 2px;
+box-sizing: border-box;
+background: black;
+border-right: 1px solid grey;
+border-bottom: 1px solid grey;
+box-shadow: 1px 0 0 white, 1px 1px 0 white, 0 1px 0 white, -1px 0 0 darkgrey,
+-1px -1px 0 darkgrey, 0 -1px 0 darkgrey, -1px 1px 0 white, 1px -1px darkgrey;
+}
+
+input[type="range"]::-moz-range-track {
+width: 100%;
+height: 2px;
+box-sizing: border-box;
+background: black;
+border-right: 1px solid grey;
+border-bottom: 1px solid grey;
+box-shadow: 1px 0 0 white, 1px 1px 0 white, 0 1px 0 white, -1px 0 0 darkgrey,
+-1px -1px 0 darkgrey, 0 -1px 0 darkgrey, -1px 1px 0 white, 1px -1px darkgrey;
+}
+
+button,
+input,
+label,
+option,
+select,
+table,
+textarea,
+ul.tree-view {
+-webkit-font-smoothing: none;
+font-family: "Pixelated MS Sans Serif", Arial;
+font-size: 11px
+}
+
+h1 {
+font-size: 5rem
+}
+
+h2 {
+font-size: 2.5rem
+}
+
+h3 {
+font-size: 2rem
+}
+
+h4 {
+font-size: 1.5rem
+}
+
+u {
+border-bottom: .5px solid #222;
+text-decoration: none
+}
+
+button,
+input[type=reset],
+input[type=submit] {
+border: none;
+border-radius: 0;
+box-sizing: border-box;
+color: transparent;
+min-height: 23px;
+min-width: 75px;
+padding: 0 12px;
+text-shadow: 0 0 #222
+}
+
+.vertical-bar,
+button,
+input[type=reset],
+input[type=submit] {
+background: silver;
+box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #fff, inset -2px -2px grey, inset 2px 2px #dfdfdf
+}
+
+.vertical-bar {
+height: 20px;
+width: 4px
+}
+
+button:not(:disabled):active,
+input[type=reset]:not(:disabled):active,
+input[type=submit]:not(:disabled):active {
+box-shadow: inset -1px -1px #fff, inset 1px 1px #0a0a0a, inset -2px -2px #dfdfdf, inset 2px 2px grey;
+text-shadow: 1px 1px #222
+}
+
+@media (not(hover)) {
+
+button:not(:disabled):hover,
+input[type=reset]:not(:disabled):hover,
+input[type=submit]:not(:disabled):hover {
+box-shadow: inset -1px -1px #fff, inset 1px 1px #0a0a0a, inset -2px -2px #dfdfdf, inset 2px 2px grey
+}
+}
+
+button:focus,
+input[type=reset]:focus,
+input[type=submit]:focus {
+outline: 1px dotted #000;
+outline-offset: -4px
+}
+
+button::-moz-focus-inner,
+input[type=reset]::-moz-focus-inner,
+input[type=submit]::-moz-focus-inner {
+border: 0
+}
+
+:disabled,
+:disabled+label,
+input[readonly],
+input[readonly]+label {
+color: grey
+}
+
+:disabled+label,
+button:disabled,
+input[type=reset]:disabled,
+input[type=submit]:disabled {
+text-shadow: 1px 1px 0 #fff
+}
+
+.title-bar-controls button {
+border: none;
+border-radius: 0;
+box-sizing: border-box;
+color: transparent;
+min-height: 23px;
+min-width: 75px;
+padding: 0 12px;
+text-shadow: 0 0 #222
+}
+
+.title-bar-controls button {
+background: silver;
+box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #fff, inset -2px -2px grey, inset 2px 2px #dfdfdf
+}
+
+.title-bar-controls button:not(:disabled):active {
+box-shadow: inset -1px -1px #fff, inset 1px 1px #0a0a0a, inset -2px -2px #dfdfdf, inset 2px 2px grey;
+text-shadow: 1px 1px #222
+}
+
+@media (not(hover)) {
+button:not(:disabled):hover {
+box-shadow: inset -1px -1px #fff, inset 1px 1px #0a0a0a, inset -2px -2px #dfdfdf, inset 2px 2px grey
+}
+}
+
+.title-bar-controls button:focus {
+outline: 1px dotted #000;
+outline-offset: -4px
+}
+
+.title-bar-controls button::-moz-focus-inner {
+border: 0
+}
+
+
+@font-face {
+font-family: "Pixelated MS Sans Serif";
+src: url("https://files.catbox.moe/1za99g.woff") format("woff");
+src: url("https://files.catbox.moe/8fwbkl.woff2") format("woff2");
+font-weight: normal;
+font-style: normal;
+}
+
+@font-face {
+font-family: "Pixelated MS Sans Serif";
+src: url("https://files.catbox.moe/z7csle.woff") format("woff");
+src: url("https://files.catbox.moe/moqhx6.woff2") format("woff2");
+font-weight: bold;
+font-style: normal;
+}
+
+
+.window,
+.title-bar {
+font-family: "Pixelated MS Sans Serif", Arial;
+-webkit-font-smoothing: none;
+font-size: 11px;
+}
+
+.window {
+box-shadow: inset -1px -1px #0a0a0a,
+inset 1px 1px #dfdfdf, inset -2px -2px #808080,
+inset 2px 2px #ffffff;
+background: #c0c0c0;
+padding: 3px;
+width: 260px;
+}
+
+.title-bar {
+padding: 3px 2px 3px 3px;
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+
+.title-bar-text {
+font-weight: bold;
+color: white;
+letter-spacing: 0;
+margin-right: 24px;
+}
+
+.title-bar-controls {
+display: flex;
+}
+
+.title-bar-controls button {
+padding: 0;
+display: block;
+min-width: 16px;
+min-height: 14px;
+}
+
+.title-bar-controls button:active {
+padding: 0;
+}
+
+.title-bar-controls button:focus {
+outline: none;
+}
+
+.title-bar-controls button[aria-label=Minimize] {
+background-image: url("https://raw.githubusercontent.com/jdan/98.css/main/icon/minimize.svg");
+background-position: bottom 3px left 4px;
+background-repeat: no-repeat
+}
+
+.title-bar-controls button[aria-label=Maximize] {
+background-image: url("https://raw.githubusercontent.com/jdan/98.css/4a2282dd9170cabf730fb5803d1153d86b2e94e3/icon/maximize.svg");
+background-position: top 2px left 3px;
+background-repeat: no-repeat
+}
+
+.title-bar-controls button[aria-label=Close] {
+background-image: url("https://raw.githubusercontent.com/jdan/98.css/main/icon/close.svg");
+background-position: top 3px left 4px;
+background-repeat: no-repeat;
+margin-left: 2px
+}
+
+.window-body {
+margin: 0px;
+/* height grows to fit the volume bar */
+}
+
+
+
+input[type=range] {
+-webkit-appearance: none;
+appearance: none;
+width: 100%;
+}
+
+input[type=range]:focus {
+outline: none;
+}
+
+/* settings for chrome browsers */
+input[type=range]::-webkit-slider-runnable-track {
+width: 100%;
+height: 2px;
+/* thickness of seeking track */
+cursor: help;
+}
+
+
+/* settings for firefox browsers */
+input[type=range]::-moz-range-track {
+width: 100%;
+height: 2px;
+/* thickness of seeking track */
+cursor: help;
+}
+
+.flex {
+display: flex;
+}
+
+.titlebaricon {
+height: 14px;
+width: 14px;
+}
+
+
+.songtitlewindow {
+background-color: #fff;
+box-shadow: inset -1px -1px #fff, inset 1px 1px grey, inset -2px -2px #dfdfdf, inset 2px 2px #0a0a0a;
+}
+
+#musicplayer {
+border: 2px solid silver;
+/* border around player */
+border-width: 2px 0px 0px 0px;
+width: 160px;
+/* width of the player */
+}
+
+#imagestyle {
+background: silver;
+/* background color of player */
+border: 2px solid silver;
+/* border around player */
+width: 95px;
+/* width of the player */
+height: 95px;
+box-shadow: inset -1px -1px #fff, inset 1px 1px grey, inset -2px -2px #dfdfdf, inset 2px 2px #0a0a0a;
+}
+
+.ic {
+width: 90px;
+position: relative;
+bottom: 1px;
+right: 1px;
+overflow: hidden;
+padding: 2px;
+border: 2px solid transparent;
+}
+
+.songtitlearrow {
+background-size: 100%;
+background-repeat: no-repeat;
+background-image: url(https://files.catbox.moe/f5e8np.png);
+height: 21px;
+width: 21px;
+position: relative;
+top: 2px;
+left: -2px;
+border: 0px solid transparent;
+border-width: 0px 0px 0px 0px;
+}
+
+.songtitle {
+padding: 5px;
+/* padding around song title */
+border-bottom: 0px;
+/* border under song title */
+display: block;
+font-family: Pixelated MS Sans Serif;
+}
+
+.controls {
+font-size: 18px !important;
+/* size of controls */
+text-align: center;
+width: 100%;
+position: relative;
+bottom: 10px;
+}
+
+.controls td {
+padding: 8px 5px 0px 5px;
+/* padding around controls */
+}
+
+button {
+min-width: 40px;
+}
+
+.seeking {
+background-color: #c0c0c0;
+/* background color of seeking bar */
+display: flex;
+justify-content: space-evenly;
+padding: 14px;
+/* padding around seeking bar */
+}
+
+.current-time {
+padding-right: 5px;
+}
+
+.total-duration {
+padding-left: 5px;
+}
+
+.controlimg {
+height: 15px;
+width: 15px;
+}
+
+.volume {
+display: flex;
+align-items: center;
+padding: 4px 14px 8px 14px;
+/* padding around volume bar */
+}
+
+.volume-label {
+padding-right: 10px;
+}
+</style>
+</head>
+
+<body>
+
+    <main>
+        <!-- 3D spinning logo (js/wizard3d.js); the flat image shows until it loads -->
+        <div class="logo3d" data-src="img/7wizard602.png">
+            <img class="logo" src="img/7wizard602.png" alt="7wizard602">
+        </div>
+
+        <!-- Icons for the links window, drawn once and reused with <use href="#name"> -->
+        <svg width="0" height="0" style="position: absolute">
+            <defs>
+                <symbol id="i-globe" viewBox="0 0 32 32">
+                    <circle cx="16" cy="16" r="13" fill="#2a7de1" stroke="#000"/>
+                    <path d="M9 8h6v5h-3v5H7z M18 13h7v7h-3v5h-4z" fill="#2ea043"/>
+                </symbol>
+                <symbol id="i-folder-open" viewBox="0 0 32 32" shape-rendering="crispEdges">
+                    <path d="M2 7h10l3 3h13v4H8L2 28z" fill="#c9a52c" stroke="#000"/>
+                    <path d="M8 14h23l-6 14H2z" fill="#f4d65a" stroke="#000"/>
+                </symbol>
+                <symbol id="i-steam" viewBox="0 0 32 32">
+                    <circle cx="16" cy="16" r="13" fill="#1b2838" stroke="#000"/>
+                    <circle cx="20" cy="12" r="4" fill="none" stroke="#fff" stroke-width="2"/>
+                    <circle cx="11" cy="20" r="3" fill="#fff"/>
+                    <path d="M11 20l8-7" stroke="#fff" stroke-width="2"/>
+                </symbol>
+                <symbol id="i-youtube" viewBox="0 0 32 32">
+                    <rect x="2" y="7" width="28" height="19" rx="5" fill="#e00" stroke="#000"/>
+                    <path d="M13 11v11l9-5.5z" fill="#fff"/>
+                </symbol>
+                <symbol id="i-discord" viewBox="0 0 32 32">
+                    <rect x="2" y="4" width="28" height="24" rx="7" fill="#5865f2" stroke="#000"/>
+                    <ellipse cx="11.5" cy="16" rx="2.5" ry="3" fill="#fff"/>
+                    <ellipse cx="20.5" cy="16" rx="2.5" ry="3" fill="#fff"/>
+                </symbol>
+                <symbol id="i-art" viewBox="0 0 32 32" shape-rendering="crispEdges">
+                    <rect x="3" y="5" width="26" height="22" fill="#fff" stroke="#000"/>
+                    <rect x="5" y="7" width="22" height="18" fill="#7fc4ff"/>
+                    <path d="M5 25l7-9 5 6 4-4 6 7z" fill="#2e8b3a"/>
+                    <rect x="21" y="9" width="3" height="3" fill="#ff0"/>
+                </symbol>
+                <symbol id="i-home" viewBox="0 0 32 32" shape-rendering="crispEdges">
+                    <path d="M3 16L16 4l13 12" fill="none" stroke="#000" stroke-width="2"/>
+                    <path d="M7 14v15h18V14L16 6z" fill="#f4d65a" stroke="#000"/>
+                    <rect x="13" y="19" width="6" height="10" fill="#a0522d" stroke="#000"/>
+                    <rect x="20" y="16" width="4" height="4" fill="#7fc4ff" stroke="#000"/>
+                </symbol>
+            </defs>
+        </svg>
+
+        <!-- Window row: music player on the left, home in the middle, links on the right -->
+        <div class="desktop">
+
+        <!-- Music player -->
+<div class="player draggable">
+<div class="window">
+<div class="title-bar">
+<div class="title-bar-text"><sub><img class="titlebaricon" src="https://files.catbox.moe/tg55zp.png"
+alt="cd player icon"></sub> Favorite Songs</div>
+<div class="title-bar-controls">
+<button aria-label="Minimize" onclick="minimizePlayer()"></button>
+<button aria-label="Maximize"></button>
+<button aria-label="Close"></button>
+</div>
+</div>
+<div class="window-body">
+<div class="flex">
+<div id="imagestyle"><img class="ic"
+src="/img/cdisk.gif"
+alt="momo icon">
+</div>
+<div id="musicplayer">
+<div class="songtitlewindow">
+<div class="flex">
+<marquee scrollamount="4" class="songtitle"></marquee>
+<div class="songtitlearrow"></div>
+</div>
+</div>
+
+<div class="seeking">
+<div class="current-time">00:00</div>
+
+<input type="range" min="1" max="100" value="0" class="seek_slider" onchange="seekTo()">
+
+<div class="total-duration">0:00</div>
+</div>
+
+<table class="controls">
+<tr>
+<td>
+<div class="prev-track" onclick="prevTrack()"><button><img
+src="https://files.catbox.moe/hhoh1h.png" class="controlimg"></button>
+</div>
+</td>
+<td>
+<div class="playpause-track" onclick="playpauseTrack()"><button><img
+src="https://files.catbox.moe/w93riq.png" class="controlimg"></button>
+</div>
+</td>
+<td>
+<div class="next-track" onclick="nextTrack()"><button><img
+src="https://files.catbox.moe/p4q9gf.png" class="controlimg"></button>
+</div>
+</td>
+</tr>
+</table>
+
+<audio id="music" src=""></audio>
+</div>
+</div>
+
+<div class="volume">
+<div class="volume-label">vol</div>
+
+<input type="range" min="0" max="100" value="30" class="volume_slider" oninput="setVolume()">
+</div>
+</div>
+</div>
+</div>
+
+        <!-- Home window: the main page. Each <fieldset> is one section box;
+             copy a whole <fieldset>...</fieldset> block to add a new section. -->
+        <section class="window home-window draggable">
+            <div class="title-bar">
+                <div class="title-bar-text"><svg class="titlebaricon"><use href="#i-home"/></svg> Home </div>
+                <div class="title-bar-controls">
+                    <button aria-label="Minimize"></button>
+                </div>
+            </div>
+            <div class="window-body">
+
+                <!-- scrolling news ticker -->
+                <div class="ticker">
+                    <marquee scrollamount="3">*** NEW: Favorites window added! *** Thanks for stopping by *** Sign my guestbook (coming soon) ***</marquee>
+                </div>
+
+                <fieldset>
+                    <legend>Welcome!</legend>
+                    <h2>--- Welcome to my page ---</h2>
+                    <p>Helloooo, I go by 6 and WELCOME TO MY NEOCITIES PAGEEEE :))).  So excited to finally get this up and running as a creative outlet + learning experience.  Would love to expand my network so feel free to reach out :DD</p>
+                    <p class="construction">This site is always under construction!</p>
+                </fieldset>
+
+                <fieldset>
+                    <legend>About Me</legend>
+                    <div class="about">
+                        <div class="avatar"><img src="img/itsmee.jpg" alt="my avatar"></div>
+                        <table class="about-table">
+                            <tr><th>Name:</th><td>602</td></tr>
+                            <tr><th>Location:</th><td>Cactus Town</td></tr>
+                            <tr><th>Into:</th><td>Games, Guitar, Drums, Art</td></tr>
+                            <tr><th>Mood:</th><td>:-)</td></tr>
+                            <tr><th>Listening to:</th><td>Multi Wave Emo, Screamo, HxC, Slam, Shoegaze, Hyperpop, </td></tr>
+                        </table>
+                    </div>
+                    <fieldset>
+                        <legend> Interest Buttons</legend>
+                        <p>
+                            <center><img src="buttons/7wizard-88x31.gif"></center>
+                        </p>
+                    </fieldset>
+                    
+                </fieldset>
+
+                <!-- newest update goes at the top: copy a whole <article>...</article> block -->
+                <fieldset>
+                    <legend>Updates</legend>
+                    <article class="post">
+                        <h3>10/31/2026</h3>
+                        <p>Added the Favorites window and this home page. More coming soon!</p>
+                    </article>
+                </fieldset>
+
+                <p class="best-viewed">Best viewed at 800x600 with your eyes open</p>
+
+                <div class="status-bar">
+                    <p>Last updated: 10/31/2026</p>
+                    <p>Done</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- right column: Links with the Buttons window stacked under it -->
+        <div class="side-column">
+
+        <!-- Links window: a Win98 "Favorites" folder tree.
+             To add a link, copy one <li>...</li> line into a folder.
+             To add a folder, copy a whole <li><details>...</details></li> block. -->
+        <nav class="window links-window draggable active">
+            <div class="title-bar">
+                <div class="title-bar-text"><svg class="titlebaricon"><use href="#i-globe"/></svg> Links </div>
+                <div class="title-bar-controls">
+                    <button aria-label="Minimize"></button>
+                </div>
+            </div>
+            <div class="window-body">
+                <ul class="tree">
+                    <li>
+                        <details open>
+                            <summary><svg><use href="#i-folder-open"/></svg> Socials</summary>
+                            <ul>
+                                <li><a href="https://steamcommunity.com/id/godiwishihad" target="_blank" rel="noopener"><svg><use href="#i-steam"/></svg> Steam</a></li>
+                                <li><a href="https://www.youtube.com/@godiwishihadmoneybot" target="_blank" rel="noopener"><svg><use href="#i-youtube"/></svg> YouTube</a></li>
+                                <li><a href="https://discord.gg/s8NpUt8Jf" target="_blank" rel="noopener"><svg><use href="#i-discord"/></svg> Discord</a></li>
+                            </ul>
+                        </details>
+                    </li>
+                    <li>
+                        <details open>
+                            <summary><svg><use href="#i-folder-open"/></svg> My Stuff</summary>
+                            <ul>
+                                <li><a href="pages/art.html"><svg><use href="#i-art"/></svg> Art</a></li>
+                            </ul>
+                        </details>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Buttons window: my 88x31 buttons. To add one, copy an <img> line. -->
+        <section class="window buttons-window draggable">
+            <div class="title-bar">
+                <div class="title-bar-text"><svg class="titlebaricon"><use href="#i-art"/></svg> Buttons </div>
+                <div class="title-bar-controls">
+                    <button aria-label="Minimize"></button>
+                </div>
+            </div>
+            <div class="window-body">
+                <div class="button-shelf">
+                    <img src="buttons/7wizard-88x31.gif" width="88" height="31" alt="7wizard button">
+                    <img src="buttons/7wizard-88x31-sparkles.gif" width="88" height="31" alt="7wizard button with sparkles">
+                    <img src="buttons/7wizard-88x31-wide.gif" width="88" height="31" alt="7wizard button, wide">
+                </div>
+            </div>
+        </section>
+
+        </div>
+        </div>
+    </main>
+
+<script>
+// initiate variables
+let track_name = document.querySelector(".songtitle");
+
+let playpause_btn = document.querySelector(".playpause-track");
+let next_btn = document.querySelector(".next-track");
+let prev_btn = document.querySelector(".prev-track");
+
+let seek_slider = document.querySelector(".seek_slider");
+let curr_time = document.querySelector(".current-time");
+let total_duration = document.querySelector(".total-duration");
+let volume_slider = document.querySelector(".volume_slider");
+
+let track_index = 0;
+let isPlaying = false;
+let updateTimer;
+
+// create new audio element
+let curr_track = document.getElementById("music");
+
+//
+// DEFINE YOUR SONGS HERE!!!!!
+// MORE THAN FOUR SONGS CAN BE ADDED!!
+// JUST ADD ANOTHER BRACKET WITH NAME AND PATH
+// CATBOX.MOE IS RECOMMENDED FOR UPLOADING MP3 FILES
+let track_list = [
+{
+name: "Train Breaks Down - Hate Hymn",
+path: "https://files.catbox.moe/uh20iv.mp3"
+},
+{
+name: "Sonic Youth - Moonface",
+path: "https://files.catbox.moe/xfpboj.mp3"
+}
+];
+//
+//
+//
+//
+//
+
+function loadTrack(track_index) {
+clearInterval(updateTimer);
+resetValues();
+
+// load a new track
+curr_track.src = track_list[track_index].path;
+curr_track.load();
+
+// update details of the track
+track_name.textContent = "playing " + (track_index + 1) + " of " + track_list.length + ": " + track_list[track_index].name;
+
+// set an interval of 1000 milliseconds for updating the seek slider
+updateTimer = setInterval(seekUpdate, 1000);
+
+// move to the next track if the current one finishes playing 
+curr_track.addEventListener("ended", nextTrack);
+}
+
+// reset values
+function resetValues() {
+curr_time.textContent = "0:00";
+total_duration.textContent = "0:00";
+seek_slider.value = 0;
+}
+
+// checks if song is playing
+function playpauseTrack() {
+if (!isPlaying) playTrack();
+else pauseTrack();
+}
+
+// plays track when play button is pressed
+function playTrack() {
+curr_track.play();
+isPlaying = true;
+
+// replace icon with the pause icon
+playpause_btn.innerHTML = '<button><img src="https://files.catbox.moe/njer0s.png" class="controlimg"></i></button>';
+}
+
+// pauses track when pause button is pressed
+function pauseTrack() {
+curr_track.pause();
+isPlaying = false;
+
+// replace icon with the play icon
+playpause_btn.innerHTML = '<button><img src="https://files.catbox.moe/w93riq.png" class="controlimg"></button>';
+}
+
+// moves to the next track
+function nextTrack() {
+if (track_index < track_list.length - 1)
+track_index += 1;
+else track_index = 0;
+loadTrack(track_index);
+playTrack();
+}
+
+// moves to the previous track
+function prevTrack() {
+if (track_index > 0)
+track_index -= 1;
+else track_index = track_list.length - 1;
+loadTrack(track_index);
+playTrack();
+}
+
+// seeker slider
+function seekTo() {
+seekto = curr_track.duration * (seek_slider.value / 100);
+curr_track.currentTime = seekto;
+}
+
+function seekUpdate() {
+let seekPosition = 0;
+
+// check if the current track duration is a legible number
+if (!isNaN(curr_track.duration)) {
+seekPosition = curr_track.currentTime * (100 / curr_track.duration);
+seek_slider.value = seekPosition;
+
+// calculate the time left and the total duration
+let currentMinutes = Math.floor(curr_track.currentTime / 60);
+let currentSeconds = Math.floor(curr_track.currentTime - currentMinutes * 60);
+let durationMinutes = Math.floor(curr_track.duration / 60);
+let durationSeconds = Math.floor(curr_track.duration - durationMinutes * 60);
+
+// adding a zero to the single digit time values
+if (currentSeconds < 10) { currentSeconds = "0" + currentSeconds; }
+if (durationSeconds < 10) { durationSeconds = "0" + durationSeconds; }
+if (currentMinutes < 10) { currentMinutes = currentMinutes; }
+if (durationMinutes < 10) { durationMinutes = durationMinutes; }
+
+curr_time.textContent = currentMinutes + ":" + currentSeconds;
+total_duration.textContent = durationMinutes + ":" + durationSeconds;
+}
+}
+
+// sets volume from the volume slider (0 to 100)
+function setVolume() {
+curr_track.volume = volume_slider.value / 100;
+}
+
+// load the first track in the tracklist
+loadTrack(track_index);
+setVolume();
+
+// any window with the "draggable" class can be dragged around by its title bar
+let topZ = 10;
+
+function makeDraggable(win) {
+let bar = win.querySelector(".title-bar");
+let dragOffsetX = 0;
+let dragOffsetY = 0;
+
+// clicking anywhere in a window brings it to the front
+win.addEventListener("pointerdown", function () {
+focusWindow(win);
+});
+
+bar.addEventListener("pointerdown", function (e) {
+// let the title bar buttons be clicked normally
+if (e.target.closest("button")) return;
+
+// switch to top/left positioning so the window follows the cursor
+let rect = win.getBoundingClientRect();
+dragOffsetX = e.clientX - rect.left;
+dragOffsetY = e.clientY - rect.top;
+moveWindow(win, rect.left + window.scrollX, rect.top + window.scrollY);
+
+bar.setPointerCapture(e.pointerId);
+bar.addEventListener("pointermove", dragWindow);
+});
+
+bar.addEventListener("pointerup", function () {
+bar.removeEventListener("pointermove", dragWindow);
+});
+
+function dragWindow(e) {
+moveWindow(win, e.pageX - dragOffsetX, e.pageY - dragOffsetY);
+}
+}
+
+// moves a window, keeping it inside the page
+function moveWindow(win, x, y) {
+// the first time a window that sits in the page layout is dragged, leave an empty
+// box the same size where it was, so the windows next to it don't jump into the gap
+if (getComputedStyle(win).position !== "absolute") {
+let spacer = document.createElement("div");
+spacer.style.width = win.offsetWidth + "px";
+spacer.style.height = win.offsetHeight + "px";
+win.before(spacer);
+}
+win.style.position = "absolute";
+let maxX = document.documentElement.clientWidth - win.offsetWidth;
+let maxY = Math.max(document.documentElement.scrollHeight, window.innerHeight) - win.offsetHeight;
+win.style.left = Math.max(0, Math.min(x, maxX)) + "px";
+win.style.top = Math.max(0, Math.min(y, maxY)) + "px";
+win.style.bottom = "auto";
+}
+
+// the window you clicked gets the blue title bar and goes on top
+function focusWindow(win) {
+document.querySelectorAll(".draggable").forEach(function (w) {
+w.classList.remove("active");
+});
+win.classList.add("active");
+topZ += 1;
+win.style.zIndex = topZ;
+}
+
+let player = document.querySelector(".player");
+makeDraggable(player);
+
+// hides or shows everything below the title bar
+function minimizePlayer() {
+player.classList.toggle("minimized");
+}
+</script>
+
+    <script>
+    // the links and home windows use the same dragging code as the music player (above)
+    document.querySelectorAll(".links-window, .home-window, .buttons-window").forEach(function (win) {
+        makeDraggable(win);
+
+        win.querySelector("[aria-label=Minimize]").addEventListener("click", function () {
+            win.classList.toggle("minimized");
+        });
+    });
+    </script>
+
+</body>
+
+</html>

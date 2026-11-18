@@ -1,0 +1,347 @@
+/* --------- Fonts ---------- */
+@font-face {
+    font-family: "Plain Black Wide";
+    src: url("Fonts/Plain Black Wide.ttf");
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* ---------- Page basics ---------- */
+
+* {
+    box-sizing: border-box;   /* padding/borders count inside an element's width */
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    min-height: 100vh;
+    background: #000 url("../img/waifu-look-at-the-sky.webp") center / cover no-repeat fixed;
+    /* ../ = go up out of the css folder, then into img */
+    color: #000000;
+    font-family: "Courier New", monospace;
+}
+
+/* Centers everything horizontally; stacks logo then links vertically */
+main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 4vh 1rem;
+    gap: 1rem;
+}
+
+/* ---------- Logo ---------- */
+
+.logo {
+    display: block;
+    width: min(500px, 85vw);
+    height: auto;
+}
+
+/* Box for the 3D logo: square and larger than the flat image so the logo
+   has room to turn without being cut off. The logo shows at ~74% of this width. */
+.logo3d {
+    --box: min(650px, 95vw);
+    position: relative;
+    width: var(--box);
+    aspect-ratio: 1;
+    /* Pull the box up by its empty space above the logo so the logo sits where the
+       flat image used to: (1 - 0.74 * 1755/2421) / 2 = 0.232 of the box width */
+    margin-top: calc(var(--box) * -0.200);
+    /* Same idea below: pull the windows up into the empty space under the logo
+       (about 80px on a full-size screen). Make this number bigger to raise them more. */
+    margin-bottom: calc(var(--box) * -0.125);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.logo3d .logo {
+    width: 74%;
+}
+
+.logo3d canvas {
+    position: absolute;
+    inset: 0;
+    cursor: grab;
+}
+
+.logo3d canvas:active {
+    cursor: grabbing;
+}
+
+/* Hide the flat fallback once the 3D version has loaded */
+.logo3d.is-3d .logo {
+    visibility: hidden;
+}
+
+
+/* ---------- Desktop layout ---------- */
+
+/* Three columns: music player | home window | links window.
+   The two outside columns are the same width, so the home window stays centered. */
+.desktop {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: start;
+    gap: 0.75rem;
+    width: 100%;
+}
+
+/* On narrow screens, stack the windows instead */
+@media (max-width: 1100px) {
+    .desktop {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
+
+/* ---------- Links window (Win98 "Favorites" tree) ---------- */
+/* The window frame and title bar styles live in index.html with the music player */
+
+/* right column: Links window with the Buttons window under it */
+.side-column {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    justify-self: start;      /* hug the home window */
+}
+
+.window.links-window {      /* .window too, so this beats the 260px width in index.html */
+    position: relative;       /* sits right of the home window until you drag it */
+    width: 220px;
+}
+
+.links-window .title-bar-text,
+.home-window .title-bar-text,
+.buttons-window .title-bar-text {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* the white sunken box the tree sits in */
+.tree {
+    background: silver;
+    box-shadow: inset -1px -1px #fff, inset 1px 1px grey, inset -2px -2px #dfdfdf, inset 2px 2px #0a0a0a;
+    padding: 6px 8px;
+    min-height: 150px;
+}
+
+.tree,
+.tree ul {
+    list-style: none;         /* removes the bullet points */
+}
+
+/* each folder's contents get the dotted line down the left side */
+.tree ul {
+    margin-left: 8px;
+    padding-left: 12px;
+    border-left: 1px dotted #808080;
+}
+
+.tree li {
+    position: relative;
+    margin: 3px 0;
+}
+
+/* the little dotted branch that points at each item */
+.tree ul li::before {
+    content: "";
+    position: absolute;
+    left: -12px;
+    top: 8px;
+    width: 10px;
+    border-top: 1px dotted #808080;
+}
+
+.tree summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.tree summary::-webkit-details-marker {
+    display: none;
+}
+
+/* the [+] / [-] box next to each folder */
+.tree summary::before {
+    content: "+";
+    width: 9px;
+    height: 9px;
+    line-height: 7px;
+    text-align: center;
+    font-size: 9px;
+    border: 1px solid #808080;
+    background: #fff;
+}
+
+.tree details[open] > summary::before {
+    content: "-";
+}
+
+.tree a {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #000;
+    text-decoration: none;
+    padding: 0 2px;
+}
+
+/* hovered link gets the navy "selected" highlight */
+.tree a:hover {
+    background: navy;
+    color: #fff;
+}
+
+.tree svg {
+    width: 16px;
+    height: 16px;
+}
+
+
+
+
+/* ---------- Buttons window (88x31 buttons) ---------- */
+
+.window.buttons-window {    /* .window too, so this beats the 260px width in index.html */
+    position: relative;
+    width: 220px;
+}
+
+/* same sunken box as the links tree, buttons wrap two to a row */
+.button-shelf {
+    background: silver;
+    box-shadow: inset -1px -1px #fff, inset 1px 1px grey, inset -2px -2px #dfdfdf, inset 2px 2px #0a0a0a;
+    padding: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+}
+
+.button-shelf img {
+    display: block;
+    image-rendering: pixelated;   /* keep pixels crisp if the page is zoomed */
+}
+
+/* ---------- Home window ---------- */
+
+.window.home-window {       /* .window too, so this beats the 260px width in index.html */
+    position: relative;       /* sits in the middle until you drag it */
+    width: min(560px, 95vw);
+}
+
+.home-window p {
+    line-height: 1.5;
+    margin-top: 6px;
+}
+
+/* sunken white box with the scrolling news */
+.ticker {
+    background: #fff;
+    box-shadow: inset -1px -1px #fff, inset 1px 1px grey, inset -2px -2px #dfdfdf, inset 2px 2px #0a0a0a;
+    padding: 4px;
+    margin: 4px 6px 0;
+}
+
+/* section boxes: the "etched" grey line with a label on it, like Win98 settings dialogs */
+.home-window fieldset {
+    border: 1px solid #808080;
+    box-shadow: 1px 1px #fff, inset 1px 1px #fff;
+    padding: 6px 10px 10px;
+    margin: 12px 6px 0;
+}
+
+.home-window legend {
+    padding: 0 3px;
+    font-weight: bold;
+}
+
+/* headings are big by default (index.html), so shrink them inside the window */
+.home-window h2 {
+    font-size: 16px;
+    color: navy;
+    text-align: center;
+    margin: 4px 0;
+}
+
+.home-window h3 {
+    font-size: 11px;
+    color: navy;
+    border-bottom: 1px dotted #808080;
+}
+
+.construction {
+    text-align: center;
+    font-weight: bold;
+    animation: blink 1s steps(1) infinite;
+}
+
+@keyframes blink {
+    50% { color: #c00000; }
+}
+
+.about {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    margin-top: 4px;
+}
+
+/* sunken picture frame */
+.avatar {
+    flex-shrink: 0;
+    width: 84px;
+    height: 84px;
+    padding: 4px;
+    background: #fff;
+    box-shadow: inset -1px -1px #fff, inset 1px 1px grey, inset -2px -2px #dfdfdf, inset 2px 2px #0a0a0a;
+}
+
+.avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.about-table {
+    border-collapse: collapse;
+}
+
+.about-table th,
+.about-table td {
+    text-align: left;
+    padding: 2px 8px 2px 0;
+}
+
+.post + .post {
+    margin-top: 10px;
+}
+
+.best-viewed {
+    text-align: center;
+    font-style: italic;
+    color: #404040;
+}
+
+/* the two little sunken boxes along the bottom */
+.status-bar {
+    display: flex;
+    gap: 2px;
+    margin-top: 8px;
+}
+
+.status-bar p {
+    flex: 1;
+    margin: 0;
+    padding: 2px 4px;
+    box-shadow: inset -1px -1px #dfdfdf, inset 1px 1px grey;
+}

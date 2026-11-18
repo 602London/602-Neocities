@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>88x31 button ideas</title>
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+    }
+}
+</script>
+<style>
+    body {
+        background: #008080;
+        font-family: "Courier New", monospace;
+        color: #fff;
+        padding: 24px;
+    }
+    h1 { font-size: 20px; margin-bottom: 4px; }
+    p.note { margin-top: 0; opacity: .85; }
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+    .card {
+        background: #c0c0c0;
+        color: #000;
+        padding: 12px;
+        border: 2px outset #fff;
+    }
+    .card h2 { font-size: 14px; margin: 0 0 8px; }
+    .card p { font-size: 12px; margin: 8px 0 0; }
+    .sizes { display: flex; align-items: flex-end; gap: 14px; }
+    canvas { image-rendering: pixelated; display: block; }
+    canvas.big { width: 264px; height: 93px; }
+    .label { font-size: 10px; margin-top: 2px; }
+</style>
+</head>
+<body>
+<h1>88x31 button ideas: clouds + spinning 7wizard</h1>
+<p class="note">Each one is shown 3x zoomed and at its real size (88x31). Every animation loops cleanly every 4 seconds, so any of them can be turned into a GIF.</p>
+<div class="grid" id="grid"></div>
+
+<script type="module">
+import * as THREE from "three";
+import { contours } from "https://cdn.jsdelivr.net/npm/d3-contour@4.0.2/+esm";
+
+const W = 88, H = 31;
+const LOOP = 4;   // seconds per loop
+
+// ---------- Assets ----------
+
+const loadImg = (src) => new Promise((ok, fail) => {
+    const img = new Image();
+    img.onload = () => ok(img);
+    img.onerror = fail;
+    img.src = src;
+});
+
+const font = new FontFace("Plain Black Wide", "url('Fonts/Plain Black Wide.ttf')");
+const [skyImg, wizImg] = await Promise.all([
+    loadImg("img/waifu-look-at-the-sky.webp"),
+    loadImg("img/7wizard602.png"),
+    font.load().then((f) => document.fonts.add(f)).catch(() => {})
+]);
+
+// Shrink the sky in halving steps so it stays smooth instead of shimmering
+function shrink(img, targetW) {
+    let src = img, w = img.width, h = img.height;
+    while (w / 2 > targetW) {
+        w = Math.round(w / 2); h = Math.round(h / 2);
+        const c = document.createElement("canvas");
+        c.width = w; c.height = h;
+        c.getContext("2d").drawImage(src, 0, 0, w, h);
+        src = c;
+    }
+    const c = document.createElement("canvas");
+    c.width = targetW; c.height = Math.round(h * targetW / w);
+    c.getContext("2d").drawImage(src, 0, 0, c.width, c.height);
+    return c;
+}
+const sky = shrink(skyImg, 200);       // a 88px window shows about half the sky
+const skyWide = shrink(skyImg, 120);   // zoomed out: more clouds in frame
+
+// ---------- 3D wizard (same extrusion as js/wizard3d.js) ----------
+
+const DEPTH = 0.3, WIDTH = 4, GRID = 500;
+const RW = 176, RH = 128;   // the wizard is rendered at this size, then shrunk
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.setSize(RW, RH, false);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(35, RW / RH, 0.1, 100);
+scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+const keyLight = new THREE.DirectionalLight(0xffffff, 1.6);
+keyLight.position.set(3, 4, 5);
+scene.add(keyLight);
+const rim = new THREE.PointLight(0x6a6aff, 30, 20);
+rim.position.set(-4, 1, -3);
+scene.add(rim);
+const logo = new THREE.Group();
+scene.add(logo);
+
+function simplify(pts, tol) {
+    if (pts.length < 3) return pts;
+    const keep = new Uint8Array(pts.length);
+    keep[0] = keep[pts.length - 1] = 1;
+    const stack = [[0, pts.length - 1]];
+    while (stack.length) {
+        const [a, b] = stack.pop();
+        const [ax, ay] = pts[a], [bx, by] = pts[b];
+        const dx = bx - ax, dy = by - ay;
+        const len = Math.hypot(dx, dy) || 1;
+        let maxD = 0, idx = -1;
+        for (let i = a + 1; i < b; i++) {
+            const d = Math.abs(dy * pts[i][0] - dx * pts[i][1] + bx * ay - by * ax) / len;
+            if (d > maxD) { maxD = d; idx = i; }
+        }
+        if (maxD > tol) { keep[idx] = 1; stack.push([a, idx], [idx, b]); }
+    }
+    return pts.filter((_, i) => keep[i]);
+}
+
+{
+    const flat = document.createElement("canvas");
+    flat.width = wizImg.width; flat.height = wizImg.height;
+    const fctx = flat.getContext("2d");
+    fctx.fillStyle = "#000";
+    fctx.fillRect(0, 0, flat.width, flat.height);
+    fctx.drawImage(wizImg, 0, 0);
+    const tex = new THREE.CanvasTexture(flat);
+    tex.colorSpace = THREE.SRGBColorSpace;
+
+    const gw = GRID, gh = Math.round(GRID * wizImg.height / wizImg.width);
+    const c = document.createElement("canvas");
+    c.width = gw + 2; c.height = gh + 2;
+    const ctx = c.getContext("2d");
+    ctx.drawImage(wizImg, 1, 1, gw, gh);
+    const px = ctx.getImageData(0, 0, gw + 2, gh + 2).data;
+    const alpha = new Float64Array((gw + 2) * (gh + 2));
+    for (let i = 0; i < alpha.length; i++) alpha[i] = px[i * 4 + 3];
+    const outline = contours().size([gw + 2, gh + 2]).thresholds([128])(alpha)[0].coordinates;
+
+    const scale = WIDTH / gw, height = gh * scale;
+    const toVec = ([x, y]) => new THREE.Vector2((x - 1) * scale - WIDTH / 2, height / 2 - (y - 1) * scale);
+    const area = (r) => Math.abs(THREE.ShapeUtils.area(r));
+    const shapes = [];
+    for (const poly of outline) {
+        const [outer, ...holes] = poly.map((r) => simplify(r.slice(0, -1), 0.35).map(toVec));
+        if (outer.length < 3 || area(outer) < 0.0008) continue;
+        const s = new THREE.Shape(outer);
+        for (const h of holes) if (h.length >= 3 && area(h) > 0.0004) s.holes.push(new THREE.Path(h));
+        shapes.push(s);
+    }
+    const geo = new THREE.ExtrudeGeometry(shapes, {
+        depth: DEPTH, bevelEnabled: true, bevelThickness: 0.02,
+        bevelSize: 0.006, bevelSegments: 3, curveSegments: 1
+    });
+    geo.translate(0, 0, -DEPTH / 2);
+    const pos = geo.attributes.position, uv = geo.attributes.uv;
+    for (let i = 0; i < pos.count; i++) uv.setXY(i, pos.getX(i) / WIDTH + 0.5, pos.getY(i) / height + 0.5);
+    geo.computeVertexNormals();
+    logo.add(new THREE.Mesh(geo, [
+        new THREE.MeshStandardMaterial({ map: tex, roughness: 0.45, metalness: 0.2 }),
+        new THREE.MeshStandardMaterial({ color: 0x1a1a5c, roughness: 0.9, metalness: 0 })
+    ]));
+
+    // Back the camera off so a full turn never clips the edges
+    const halfV = THREE.MathUtils.degToRad(camera.fov / 2);
+    const halfH = Math.atan(Math.tan(halfV) * camera.aspect);
+    const dist = Math.max((height / 2 + 0.1) / Math.tan(halfV), (WIDTH / 2) / Math.tan(halfH)) + WIDTH / 2;
+    camera.position.set(0, 0, dist);
+}
+
+// Render the wizard for loop phase p (0..1)
+function renderWizard(p, turns = 1) {
+    logo.rotation.y = p * Math.PI * 2 * turns;
+    logo.position.y = Math.sin(p * Math.PI * 4) * 0.06;
+    rim.intensity = 25 + Math.sin(p * Math.PI * 4) * 8;
+    renderer.render(scene, camera);
+    return renderer.domElement;
+}
+
+// ---------- Drawing helpers ----------
+
+// Window of the sky, x drifts back and forth once per loop
+function drawSky(ctx, src, p, drift) {
+    const maxX = src.width - W;
+    const x = Math.round(maxX / 2 + Math.sin(p * Math.PI * 2) * drift * maxX / 2);
+    const y = Math.round((src.height - H) * 0.35);
+    ctx.drawImage(src, x, y, W, H, 0, 0, W, H);
+}
+
+// stretch > 1 widens the wizard without making it taller
+function drawWiz(ctx, wiz, cx, cy, h, smooth = true, stretch = 1) {
+    const w = h * RW / RH * stretch;
+    ctx.imageSmoothingEnabled = smooth;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(wiz, Math.round(cx - w / 2), Math.round(cy - h / 2), w, h);
+    ctx.imageSmoothingEnabled = true;
+}
+
+function border(ctx, color) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(0.5, 0.5, W - 1, H - 1);
+}
+
+// Win98 raised edge: light top-left, dark bottom-right, two pixels deep
+function bevel(ctx) {
+    const line = (c, x1, y1, x2, y2) => { ctx.fillStyle = c; ctx.fillRect(x1, y1, x2 - x1 + 1, y2 - y1 + 1); };
+    line("#fff", 0, 0, W - 1, 0);         line("#fff", 0, 0, 0, H - 1);
+    line("#000", 0, H - 1, W - 1, H - 1); line("#000", W - 1, 0, W - 1, H - 1);
+    line("#dfdfdf", 1, 1, W - 2, 1);      line("#dfdfdf", 1, 1, 1, H - 2);
+    line("#808080", 1, H - 2, W - 2, H - 2); line("#808080", W - 2, 1, W - 2, H - 2);
+}
+
+function outlinedText(ctx, text, x, y, size, fill, stroke, align = "left") {
+    ctx.font = `${size}px "Plain Black Wide", "Arial Black", sans-serif`;
+    ctx.textAlign = align;
+    ctx.textBaseline = "middle";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = stroke;
+    ctx.strokeText(text, x, y);
+    ctx.fillStyle = fill;
+    ctx.fillText(text, x, y);
+}
+
+function posterize(ctx, levels) {
+    const img = ctx.getImageData(0, 0, W, H);
+    const d = img.data, step = 255 / (levels - 1);
+    for (let i = 0; i < d.length; i += 4) {
+        for (let k = 0; k < 3; k++) d[i + k] = Math.round(d[i + k] / step) * step;
+    }
+    ctx.putImageData(img, 0, 0);
+}
+
+// Fixed twinkle spots, each with its own phase
+const sparkles = [[8, 6, 0], [80, 7, 0.3], [14, 24, 0.55], [74, 24, 0.8], [44, 3, 0.15], [62, 27, 0.65]];
+function drawSparkles(ctx, p) {
+    for (const [x, y, ph] of sparkles) {
+        const a = Math.sin(((p + ph) % 1) * Math.PI * 2);
+        if (a < 0.3) continue;
+        ctx.fillStyle = `rgba(255,255,255,${a})`;
+        ctx.fillRect(x, y, 1, 1);
+        if (a > 0.8) {
+            ctx.fillRect(x - 1, y, 1, 1); ctx.fillRect(x + 1, y, 1, 1);
+            ctx.fillRect(x, y - 1, 1, 1); ctx.fillRect(x, y + 1, 1, 1);
+        }
+    }
+}
+
+// ---------- The variants ----------
+
+const variants = [
+    {
+        name: "1. Sky Spin",
+        file: "7wizard-88x31.gif",
+        desc: "The original: a still patch of your sky with the wizard turning in the middle and a thin navy border.",
+        draw(ctx, p) {
+            drawSky(ctx, sky, p, 0);
+            drawWiz(ctx, renderWizard(p), W / 2, H / 2, 29);
+            border(ctx, "#1a1a5c");
+        }
+    },
+    {
+        name: "1b. Sky Spin + Sparkles",
+        file: "7wizard-88x31-sparkles.gif",
+        desc: "The same button with white sparkles twinkling in the sky around the wizard.",
+        draw(ctx, p) {
+            drawSky(ctx, sky, p, 0);
+            drawSparkles(ctx, p);
+            drawWiz(ctx, renderWizard(p), W / 2, H / 2, 29);
+            border(ctx, "#1a1a5c");
+        }
+    },
+    {
+        name: "1c. Sky Spin, Wide",
+        file: "7wizard-88x31-wide.gif",
+        desc: "The wizard stretched sideways to fill more of the button. It is the same height, just wider.",
+        draw(ctx, p) {
+            drawSky(ctx, sky, p, 0);
+            drawWiz(ctx, renderWizard(p), W / 2, H / 2, 29, true, 1.8);
+            border(ctx, "#1a1a5c");
+        }
+    }
+];
+
+// ---------- Page ----------
+
+const grid = document.getElementById("grid");
+const targets = variants.map((v) => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `<h2>${v.name}</h2><div class="sizes"><div><canvas class="big"></canvas><div class="label">3x</div></div><div><canvas class="real"></canvas><div class="label">actual</div></div></div><p>${v.desc}</p>`;
+    grid.appendChild(card);
+    const canvases = [...card.querySelectorAll("canvas")];
+    canvases.forEach((c) => { c.width = W; c.height = H; });
+    return { v, ctx: canvases[0].getContext("2d", { willReadFrequently: true }), copy: canvases[1].getContext("2d") };
+});
+
+function frame(t) {
+    const p = (t / 1000 / LOOP) % 1;
+    for (const { v, ctx, copy } of targets) {
+        ctx.clearRect(0, 0, W, H);
+        v.draw(ctx, p);
+        copy.clearRect(0, 0, W, H);
+        copy.drawImage(ctx.canvas, 0, 0);
+    }
+    requestAnimationFrame(frame);
+}
+
+// ---------- GIF export ----------
+// button-preview.html?export renders every variant frame by frame and sends each
+// GIF to the local save server (save-server.py), which writes it into buttons/
+
+const FPS = 20;
+
+async function exportGifs() {
+    const { GIFEncoder, quantize, applyPalette } = await import("https://cdn.jsdelivr.net/npm/gifenc@1.0.3/+esm");
+    const frameCount = LOOP * FPS;
+    for (const { v, ctx } of targets) {
+        const frames = [];
+        for (let i = 0; i < frameCount; i++) {
+            ctx.clearRect(0, 0, W, H);
+            v.draw(ctx, i / frameCount);
+            frames.push(ctx.getImageData(0, 0, W, H).data);
+        }
+        // One palette for the whole animation so colours don't flicker between frames
+        const all = new Uint8ClampedArray(frames.length * W * H * 4);
+        frames.forEach((f, i) => all.set(f, i * W * H * 4));
+        const palette = quantize(all, 256);
+
+        const gif = GIFEncoder();
+        frames.forEach((f, i) => {
+            gif.writeFrame(applyPalette(f, palette), W, H, { palette: i === 0 ? palette : undefined, delay: 1000 / FPS });
+        });
+        gif.finish();
+        await fetch(`/save?name=${encodeURIComponent(v.file)}`, { method: "POST", body: gif.bytes() });
+    }
+    await fetch("/done", { method: "POST" });
+}
+
+if (new URLSearchParams(location.search).has("export")) {
+    exportGifs().catch((e) => fetch("/error", { method: "POST", body: String(e && e.stack || e) }));
+} else {
+    requestAnimationFrame(frame);
+}
+</script>
+</body>
+</html>
